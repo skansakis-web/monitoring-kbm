@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Piket - SMKN 1 Kismantoro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f0f4fa;
+      --surface: #ffffff;
+      --surface2: #f5f7fb;
+      --border: #dde3ef;
+      --text: #0a0f1e;
+      --text-muted: #5a6480;
+      --primary: #035EB9;
+      --primary-dark: #024a94;
+      --primary-light: #e6f0fb;
+      --hadir: #00A859;
+      --hadir-bg: #e6f7ef;
+      --tugas-bg: #fffbe6;
+      --tugas-border: #FFF212;
+      --absen: #ED3237;
+      --absen-bg: #fdeaea;
+      --absen-border: #f7a0a2;
+      --shadow: 0 1px 3px rgba(3,94,185,0.08);
+      --shadow-md: 0 4px 6px rgba(3,94,185,0.10);
+      --shadow-lg: 0 10px 25px rgba(3,94,185,0.13);
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: var(--primary);
+      border-bottom: 3px solid #ED3237;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(3,94,185,0.35);
+    }
+
+    .header-inner {
+      max-width: 1400px; margin: 0 auto;
+      padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+
+    .header-title { font-size: 16px; font-weight: 700; color: #fff; }
+    .header-sub { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+    .header-guru-nama { font-size: 13px; font-weight: 700; color: #fff; text-align: right; }
+    .header-guru-hari { font-size: 11px; color: rgba(255,255,255,0.7); text-align: right; }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
+    .btn-logout {
+      background: rgba(237,50,55,0.2);
+      border: 1.5px solid rgba(237,50,55,0.5);
+      color: #fff; padding: 7px 14px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-logout:hover { background: rgba(237,50,55,0.4); }
+
+    main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+    .controls {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px; flex-wrap: wrap;
+    }
+
+    .control-label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+
+    .filter-tingkat {
+      display: flex; gap: 6px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 4px;
+      box-shadow: var(--shadow);
+    }
+
+    .filter-btn {
+      padding: 7px 20px; border-radius: 7px; border: none;
+      background: none; font-family: inherit; font-size: 13px;
+      font-weight: 600; color: var(--text-muted); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 6px rgba(3,94,185,0.3); }
+    .filter-btn:hover:not(.active) { background: var(--primary-light); color: var(--primary); }
+
+    .info-tanggal {
+      margin-left: auto; font-size: 13px; font-weight: 600;
+      color: var(--text-muted); background: var(--surface);
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 8px 14px; box-shadow: var(--shadow);
+    }
+
+    .table-wrapper {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow-md); overflow-x: auto;
+      border: 1px solid var(--border);
+    }
+
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 600px; }
+    tr { height: 60px; }
+
+    th {
+      background: var(--primary); color: #fff;
+      font-size: 12px; font-weight: 600;
+      padding: 12px 8px; text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.15);
+      border-bottom: 2px solid #FFF212;
+      white-space: nowrap;
+    }
+    th:last-child { border-right: none; }
+    th.col-jam { width: 55px; background: #024a94; }
+
+    td {
+      border: 1px solid var(--border);
+      vertical-align: top; padding: 0;
+      position: relative; height: 60px;
+    }
+
+    td.col-jam {
+      background: var(--surface2); text-align: center;
+      vertical-align: middle; width: 55px;
+    }
+
+    .jam-number {
+      font-family: 'DM Mono', monospace;
+      font-size: 20px; font-weight: 700; color: var(--text);
+    }
+
+    .cell {
+      height: 100%; padding: 8px 10px; cursor: pointer;
+      transition: filter 0.15s; display: flex;
+      flex-direction: column; justify-content: center;
+      gap: 2px; border-left: 3px solid transparent;
+    }
+    .cell:hover { filter: brightness(0.93); }
+    .cell:active { transform: scale(0.99); }
+
+    .cell-guru { font-size: 15px; font-weight: 700; line-height: 1.3; }
+    .cell-mapel { font-size: 12px; font-weight: 500; line-height: 1.3; opacity: 0.85; }
+
+    .status-hadir { background: var(--hadir-bg); border-left-color: var(--hadir); }
+    .status-hadir .cell-guru { color: var(--hadir); }
+    .status-hadir .cell-mapel { color: #007a40; }
+
+    .status-tugas { background: var(--tugas-bg); border-left-color: #c49b00; }
+    .status-tugas .cell-guru { color: #7a6200; }
+    .status-tugas .cell-mapel { color: #7a6200; }
+
+    .status-absen { background: var(--absen-bg); border-left-color: var(--absen); }
+    .status-absen .cell-guru { color: var(--absen); }
+    .status-absen .cell-mapel { color: #b02124; }
+
+    .status-belum { background: var(--surface); border-left-color: var(--border); }
+    .status-belum .cell-guru { color: var(--text); }
+    .status-belum .cell-mapel { color: var(--text-muted); }
+
+    .status-upacara { background: #fff; border-left-color: var(--primary); cursor: default; }
+    .cell-upacara-text { font-size: 11px; font-weight: 600; color: var(--primary); text-align: center; width: 100%; }
+
+    .loading-overlay {
+      display: flex; align-items: center; justify-content: center;
+      padding: 60px; gap: 12px; color: var(--text-muted); font-size: 14px;
+    }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 200; display: flex; align-items: center;
+      justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-backdrop.active { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--surface); border-radius: 14px;
+      box-shadow: var(--shadow-lg); width: 100%; max-width: 400px;
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.2s; overflow: hidden;
+    }
+    .modal-backdrop.active .modal { transform: translateY(0) scale(1); }
+
+    .modal-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px;
+    }
+
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .modal-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+    .modal-close {
+      background: var(--surface2); border: none;
+      width: 28px; height: 28px; border-radius: 6px;
+      cursor: pointer; font-size: 16px; color: var(--text-muted);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s;
+    }
+    .modal-close:hover { background: var(--border); }
+
+    .modal-body { padding: 16px 20px 20px; }
+
+    .status-options { display: flex; gap: 8px; margin-bottom: 16px; }
+
+    .status-option { flex: 1; position: relative; }
+    .status-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+
+    .status-option label {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 10px 8px; border-radius: 8px;
+      border: 2px solid var(--border); font-size: 13px;
+      font-weight: 600; color: var(--text-muted);
+      cursor: pointer; transition: all 0.15s; text-align: center;
+    }
+    .status-option label:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+    .status-option.hadir input[type="radio"]:checked + label {
+      background: var(--hadir-bg); color: var(--hadir); border-color: var(--hadir);
+    }
+    .status-option.absen input[type="radio"]:checked + label {
+      background: var(--absen-bg); color: var(--absen); border-color: var(--absen);
+    }
+
+    .tugas-field { display: none; margin-bottom: 14px; }
+    .tugas-field.visible { display: block; }
+
+    .tugas-label {
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      display: block; margin-bottom: 6px;
+    }
+
+    textarea {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-family: inherit; font-size: 13px; color: var(--text);
+      background: var(--surface2); outline: none;
+      resize: vertical; min-height: 80px; transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(3,94,185,0.1); }
+
+    .field-error { font-size: 11px; color: var(--absen); margin-top: 4px; min-height: 16px; display: block; }
+
+    .btn-simpan {
+      width: 100%; padding: 11px; background: var(--primary);
+      color: #fff; border: none; border-radius: 8px;
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: background 0.2s; margin-top: 4px;
+    }
+    .btn-simpan:hover { background: var(--primary-dark); }
+    .btn-simpan:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1a1d23; color: #fff;
+      padding: 12px 18px; border-radius: 10px;
+      font-size: 13px; font-weight: 600;
+      box-shadow: var(--shadow-lg); z-index: 300;
+      transform: translateY(60px); opacity: 0; transition: all 0.3s;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-left: 4px solid var(--hadir); }
+    .toast.error { border-left: 4px solid var(--absen); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="header-title">Dashboard Guru Piket</div>
+      <div class="header-sub">SMK Negeri 1 Kismantoro</div>
+    </div>
+    <div class="header-right">
+      <div>
+        <div class="header-guru-nama" id="headerNama">—</div>
+        <div class="header-guru-hari" id="headerHari">—</div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="controls">
+    <span class="control-label">Tingkat</span>
+    <div class="filter-tingkat">
+      <button class="filter-btn active" onclick="filterTingkat('X', this)">Kelas X</button>
+      <button class="filter-btn" onclick="filterTingkat('XI', this)">Kelas XI</button>
+      <button class="filter-btn" onclick="filterTingkat('XII', this)">Kelas XII</button>
+    </div>
+    <div class="info-tanggal" id="infoDayDate">—</div>
+  </div>
+
+  <div class="table-wrapper" id="tableWrapper">
+    <div class="loading-overlay"><div class="spinner"></div> Memuat jadwal...</div>
+  </div>
+</main>
+
+<!-- MODAL ISI KBM -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">—</div>
+        <div class="modal-subtitle" id="modalSubtitle">—</div>
+      </div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="status-options">
+        <div class="status-option hadir">
+          <input type="radio" name="statusKBM" id="radioHadir" value="Hadir">
+          <label for="radioHadir">✅ Hadir</label>
+        </div>
+        <div class="status-option absen">
+          <input type="radio" name="statusKBM" id="radioAbsen" value="Tidak Hadir">
+          <label for="radioAbsen">❌ Tidak Hadir</label>
+        </div>
+      </div>
+      <div class="tugas-field" id="tugasField">
+        <label class="tugas-label">Tugas yang Diberikan <span style="color:var(--absen)">*</span></label>
+        <textarea id="tugasInput" placeholder="Tuliskan tugas yang diberikan guru..."></textarea>
+        <span class="field-error" id="tugasError"></span>
+      </div>
+      <button class="btn-simpan" id="btnSimpan" onclick="simpanKBM()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'https://script.google.com/macros/s/AKfycbzC-2qdoiyHA31iejc3xwEnMfi2fN5g6NjRw6h-_36wIML4Q59PtEDQohNO3I9ENX6p/exec';
+
+  const SEMUA_KELAS = [
+    'X TJKT 1','X TJKT 2','X TJKT 3','X TPFL 1','X TPFL 2','X TO 1','X TO 2',
+    'XI TJKT 1','XI TJKT 2','XI TJKT 3','XI TPFL 1','XI TPFL 2','XI TO 1','XI TO 2',
+    'XII TJKT 1','XII TJKT 2','XII TJKT 3','XII TPFL 1','XII TPFL 2','XII TO 1','XII TO 2'
+  ];
+
+  let session = null;
+  let jadwalData = null;
+  let currentTingkat = 'X';
+  let currentSesi = null;
+
+  // SESSION CHECK
+  function checkSession() {
+    const nama = sessionStorage.getItem('piket_nama');
+    const username = sessionStorage.getItem('piket_username');
+    const hari = sessionStorage.getItem('piket_hari');
+    const tanggal = sessionStorage.getItem('piket_tanggal');
+    if (!nama || !username || !hari || !tanggal) {
+      window.location.href = 'index.html';
+      return false;
+    }
+    session = { nama, username, hari, tanggal };
+    document.getElementById('headerNama').textContent = nama;
+    document.getElementById('headerHari').textContent = `Piket ${hari}`;
+    const tglFmt = new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+    document.getElementById('infoDayDate').textContent = tglFmt;
+    return true;
+  }
+
+  // LOAD JADWAL
+  async function loadJadwal() {
+    try {
+      const res = await fetch(`${API}?action=getJadwalHariIni`, { redirect: 'follow' });
+      jadwalData = await res.json();
+      renderTable();
+    } catch (e) {
+      document.getElementById('tableWrapper').innerHTML =
+        '<div class="loading-overlay">⚠️ Gagal memuat jadwal. Coba refresh halaman.</div>';
+    }
+  }
+
+  // FILTER TINGKAT
+  function filterTingkat(tingkat, btn) {
+    currentTingkat = tingkat;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+  }
+
+  // RENDER TABLE
+  function renderTable() {
+    if (!jadwalData) return;
+    const kelasList = SEMUA_KELAS.filter(k => k.startsWith(currentTingkat + ' '));
+    const jadwal = jadwalData.jadwal;
+
+    let html = '<table><thead><tr>';
+    html += '<th class="col-jam">Jam</th>';
+    kelasList.forEach(k => {
+      html += `<th>${k.replace(currentTingkat + ' ', '')}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    for (let jam = 1; jam <= 10; jam++) {
+      html += '<tr>';
+      html += `<td class="col-jam"><span class="jam-number">${jam}</span></td>`;
+
+      kelasList.forEach(kelas => {
+        const sesiList = jadwal[kelas] || [];
+        const sesi = sesiList.find(s => s.jamMulai <= jam && s.jamSelesai >= jam);
+
+        if (sesi && sesi.jamMulai !== jam) return;
+
+        if (!sesi) {
+          html += '<td style="background:var(--surface2);"></td>';
+          return;
+        }
+
+        const rowspan = sesi.jamSelesai - sesi.jamMulai + 1;
+
+        if (sesi.tipe === 'upacara') {
+          html += `<td rowspan="${rowspan}" style="text-align:center;vertical-align:middle;">
+            <div class="cell status-upacara" style="min-height:${rowspan*60}px;align-items:center;justify-content:center;cursor:default;">
+              <span class="cell-upacara-text">Upacara Bendera</span>
+            </div>
+          </td>`;
+          return;
+        }
+
+        const kbm = sesi.kbm;
+        let statusClass = 'status-belum';
+        if (kbm) {
+          if (kbm.status === 'Hadir') statusClass = 'status-hadir';
+          else if (kbm.status === 'Tugas') statusClass = 'status-tugas';
+          else if (kbm.status === 'Tidak Hadir') statusClass = 'status-absen';
+        }
+
+        const sesiData = encodeURIComponent(JSON.stringify({ ...sesi, kelas }));
+
+        html += `<td rowspan="${rowspan}" onclick="openModal('${sesiData}')">
+          <div class="cell ${statusClass}" style="min-height:${rowspan*60}px;height:${rowspan*60}px;">
+            <span class="cell-guru">${sesi.kodeGuru}</span>
+            <span class="cell-mapel">${sesi.namaMapel}</span>
+          </div>
+        </td>`;
+      });
+
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    document.getElementById('tableWrapper').innerHTML = html;
+  }
+
+  // MODAL
+  function openModal(sesiJson) {
+    const sesi = JSON.parse(decodeURIComponent(sesiJson));
+    currentSesi = sesi;
+
+    const jamLabel = sesi.jamMulai === sesi.jamSelesai
+      ? `Jam ${sesi.jamMulai}` : `Jam ${sesi.jamMulai}–${sesi.jamSelesai}`;
+
+    document.getElementById('modalTitle').textContent = sesi.namaGuru;
+    document.getElementById('modalSubtitle').textContent = `${sesi.namaMapel} · ${sesi.kelas} · ${jamLabel}`;
+
+    document.querySelectorAll('input[name="statusKBM"]').forEach(r => r.checked = false);
+    document.getElementById('tugasInput').value = '';
+    document.getElementById('tugasError').textContent = '';
+    document.getElementById('tugasField').classList.remove('visible');
+
+    if (sesi.kbm) {
+      const st = sesi.kbm.status;
+      if (st === 'Hadir') {
+        document.getElementById('radioHadir').checked = true;
+      } else if (st === 'Tidak Hadir' || st === 'Tugas') {
+        document.getElementById('radioAbsen').checked = true;
+        document.getElementById('tugasField').classList.add('visible');
+        document.getElementById('tugasInput').value = sesi.kbm.tugas !== '-' ? sesi.kbm.tugas : '';
+      }
+    }
+
+    document.getElementById('btnSimpan').textContent = 'Simpan';
+    document.getElementById('btnSimpan').disabled = false;
+    document.getElementById('modalBackdrop').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('modalBackdrop').classList.remove('active');
+    currentSesi = null;
+  }
+
+  document.querySelectorAll('input[name="statusKBM"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isAbsen = document.getElementById('radioAbsen').checked;
+      document.getElementById('tugasField').classList.toggle('visible', isAbsen);
+      document.getElementById('tugasError').textContent = '';
+    });
+  });
+
+  // SIMPAN KBM
+  async function simpanKBM() {
+    const statusEl = document.querySelector('input[name="statusKBM"]:checked');
+    if (!statusEl) {
+      showToast('Pilih status kehadiran terlebih dahulu.', 'error');
+      return;
+    }
+
+    const status = statusEl.value;
+    let tugas = '-';
+
+    if (status === 'Tidak Hadir') {
+      tugas = document.getElementById('tugasInput').value.trim();
+      if (!tugas) {
+        document.getElementById('tugasError').textContent = 'Tugas wajib diisi jika guru tidak hadir.';
+        document.getElementById('tugasInput').focus();
+        return;
+      }
+    }
+
+    const btn = document.getElementById('btnSimpan');
+    btn.textContent = 'Menyimpan...';
+    btn.disabled = true;
+
+    const statusFinal = (status === 'Tidak Hadir' && tugas !== '-') ? 'Tugas' : status;
+
+    const payload = {
+      action: 'simpanKBM',
+      data: {
+        tanggal: session.tanggal,
+        kelas: currentSesi.kelas,
+        jamMulai: currentSesi.jamMulai,
+        jamSelesai: currentSesi.jamSelesai,
+        kodeGuru: currentSesi.kodeGuru,
+        namaGuru: currentSesi.namaGuru,
+        kodeMapel: currentSesi.kodeMapel,
+        namaMapel: currentSesi.namaMapel,
+        status: statusFinal,
+        tugas: tugas,
+        diinputOleh: session.username
+      }
+    };
+
+    try {
+      const res = await fetch(API, { method: 'POST', redirect: 'follow', body: JSON.stringify(payload) });
+      const json = await res.json();
+
+      if (json.status === 'ok') {
+        // Update data lokal tanpa reload
+        const sesiList = jadwalData.jadwal[currentSesi.kelas];
+        const idx = sesiList.findIndex(s => s.jamMulai === currentSesi.jamMulai);
+        if (idx !== -1) {
+          sesiList[idx].kbm = {
+            status: statusFinal,
+            tugas: tugas,
+            diinputOleh: session.username,
+            waktuInput: new Date().toLocaleString('id-ID')
+          };
+        }
+        closeModal();
+        renderTable();
+        showToast('Data KBM berhasil disimpan!', 'success');
+      } else {
+        showToast('Gagal menyimpan. Coba lagi.', 'error');
+        btn.textContent = 'Simpan';
+        btn.disabled = false;
+      }
+    } catch (e) {
+      showToast('Gagal terhubung ke server.', 'error');
+      btn.textContent = 'Simpan';
+      btn.disabled = false;
+    }
+  }
+
+  // TOAST
+  function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = `toast ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // LOGOUT
+  function doLogout() {
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  }
+
+  // EVENTS
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalBackdrop').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalBackdrop')) closeModal();
+  });
+
+  // INIT
+  if (checkSession()) loadJadwal();
+</script>
+</body>
+</html>
