@@ -546,6 +546,12 @@
     .empty-icon { font-size: 40px; margin-bottom: 12px; }
     .empty-text { font-size: 14px; font-weight: 500; }
 
+
+    /* LOGIN MODAL */
+    #loginUsername:focus, #loginPassword:focus {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 3px rgba(3,94,185,0.1);
+    }
     /* RESPONSIVE */
     @media (max-width: 768px) {
       main { padding: 16px; }
@@ -569,10 +575,10 @@
         <p>SMK Negeri 1 Kismantoro</p>
       </div>
     </div>
-    <a href="login.html" class="header-login">
+    <button onclick="openLogin()" class="header-login">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
       Login Guru Piket
-    </a>
+    </button>
   </div>
 </header>
 
@@ -605,6 +611,48 @@
     </div>
   </div>
 </main>
+
+
+<!-- MODAL LOGIN -->
+<div class="modal-backdrop" id="loginBackdrop">
+  <div class="modal" id="loginModal" style="max-width:360px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Login Guru Piket</div>
+        <div class="modal-subtitle">Masukkan username dan password</div>
+      </div>
+      <button class="modal-close" id="loginClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">Username</label>
+        <input type="text" id="loginUsername" placeholder="Username" style="
+          width:100%;padding:9px 12px;border:1.5px solid var(--border);
+          border-radius:8px;font-family:inherit;font-size:14px;
+          color:var(--text);background:var(--surface2);outline:none;
+          transition:border-color 0.2s;box-sizing:border-box;
+        " onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div style="margin-bottom:6px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">Password</label>
+        <input type="password" id="loginPassword" placeholder="Password" style="
+          width:100%;padding:9px 12px;border:1.5px solid var(--border);
+          border-radius:8px;font-family:inherit;font-size:14px;
+          color:var(--text);background:var(--surface2);outline:none;
+          transition:border-color 0.2s;box-sizing:border-box;
+        " onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div id="loginError" style="font-size:12px;color:var(--absen);min-height:18px;margin-bottom:12px;"></div>
+      <button id="loginSubmit" onclick="doLogin()" style="
+        width:100%;padding:10px;background:var(--primary);color:#fff;
+        border:none;border-radius:8px;font-family:inherit;font-size:14px;
+        font-weight:700;cursor:pointer;transition:background 0.2s;
+      " onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary)'">
+        Masuk
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL DETAIL -->
 <div class="modal-backdrop" id="modalBackdrop">
@@ -887,6 +935,76 @@
       currentSenin.setDate(currentSenin.getDate() + 7);
       loadRekap();
     }
+  });
+
+
+  // ============================================================
+  // LOGIN
+  // ============================================================
+  function openLogin() {
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('loginBackdrop').classList.add('active');
+    setTimeout(() => document.getElementById('loginUsername').focus(), 100);
+  }
+
+  function closeLogin() {
+    document.getElementById('loginBackdrop').classList.remove('active');
+  }
+
+  async function doLogin() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    const btn = document.getElementById('loginSubmit');
+
+    if (!username || !password) {
+      errEl.textContent = 'Username dan password harus diisi.';
+      return;
+    }
+
+    btn.textContent = 'Memverifikasi...';
+    btn.disabled = true;
+    errEl.textContent = '';
+
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        redirect: 'follow',
+        body: JSON.stringify({ action: 'login', username, password })
+      });
+      const json = await res.json();
+
+      if (json.status === 'ok') {
+        // Simpan session di sessionStorage
+        sessionStorage.setItem('piket_nama', json.nama);
+        sessionStorage.setItem('piket_username', json.username);
+        sessionStorage.setItem('piket_hari', json.hari);
+        sessionStorage.setItem('piket_tanggal', json.tanggal);
+        window.location.href = 'dashboard.html';
+      } else {
+        errEl.textContent = json.message || 'Username atau password salah.';
+        btn.textContent = 'Masuk';
+        btn.disabled = false;
+      }
+    } catch (e) {
+      errEl.textContent = 'Gagal terhubung ke server. Coba lagi.';
+      btn.textContent = 'Masuk';
+      btn.disabled = false;
+    }
+  }
+
+  // Enter key untuk submit login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('loginBackdrop').classList.contains('active')) {
+      doLogin();
+    }
+  });
+
+  document.getElementById('loginClose').addEventListener('click', closeLogin);
+  document.getElementById('loginBackdrop').addEventListener('click', e => {
+    if (e.target === document.getElementById('loginBackdrop')) closeLogin();
   });
 
   // Init
