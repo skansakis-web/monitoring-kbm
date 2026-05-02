@@ -563,6 +563,7 @@
       .cell-mapel { font-size: 10px; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -591,6 +592,17 @@
       </select>
     </div>
 
+    <button id="btnDownload" onclick="downloadExcel()" style="
+      display:flex;align-items:center;gap:6px;
+      background:var(--hadir);color:#fff;
+      border:none;border-radius:8px;padding:8px 14px;
+      font-family:inherit;font-size:13px;font-weight:600;
+      cursor:pointer;transition:background 0.2s;
+      box-shadow:0 2px 6px rgba(0,168,89,0.3);
+    " onmouseover="this.style.background='#007a40'" onmouseout="this.style.background='var(--hadir)'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Excel
+    </button>
     <div class="week-nav">
       <button class="week-btn" id="btnPrev" title="Minggu sebelumnya">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -1010,6 +1022,94 @@
   document.getElementById('loginBackdrop').addEventListener('click', e => {
     if (e.target === document.getElementById('loginBackdrop')) closeLogin();
   });
+
+
+  // ============================================================
+  // DOWNLOAD EXCEL
+  // ============================================================
+  async function downloadExcel() {
+    const btn = document.getElementById('btnDownload');
+    btn.textContent = 'Memuat...';
+    btn.disabled = true;
+
+    try {
+      // Ambil rekap semua kelas untuk minggu ini
+      const SEMUA_KELAS = [
+        'X TJKT 1','X TJKT 2','X TJKT 3','X TPFL 1','X TPFL 2','X TO 1','X TO 2',
+        'XI TJKT 1','XI TJKT 2','XI TJKT 3','XI TPFL 1','XI TPFL 2','XI TO 1','XI TO 2',
+        'XII TJKT 1','XII TJKT 2','XII TJKT 3','XII TPFL 1','XII TPFL 2','XII TO 1','XII TO 2'
+      ];
+
+      const rows = [];
+      // Header
+      rows.push(['Tanggal','Kelas','Jam Mulai','Jam Selesai','Kode Guru','Nama Guru','Kode Mapel','Nama Mapel','Status','Tugas','Diinput Oleh','Waktu Input']);
+
+      // Fetch rekap semua kelas sekaligus (parallel)
+      const fetches = SEMUA_KELAS.map(kelas =>
+        fetch(`${API}?action=getRekap&kelas=${encodeURIComponent(kelas)}&tanggalMulai=${formatTanggal(currentSenin)}`, { redirect: 'follow' })
+          .then(r => r.json())
+      );
+
+      const results = await Promise.all(fetches);
+
+      results.forEach((data, idx) => {
+        const kelas = SEMUA_KELAS[idx];
+        const minggu = data.minggu;
+        if (!minggu) return;
+
+        Object.values(minggu).forEach(hariData => {
+          const tanggal = hariData.tanggal;
+          (hariData.sesi || []).forEach(sesi => {
+            if (sesi.tipe === 'upacara') return;
+            const kbm = sesi.kbm;
+            rows.push([
+              tanggal,
+              kelas,
+              sesi.jamMulai,
+              sesi.jamSelesai,
+              sesi.kodeGuru,
+              sesi.namaGuru,
+              sesi.kodeMapel,
+              sesi.namaMapel,
+              kbm ? kbm.status : '',
+              kbm ? (kbm.tugas === '-' ? '' : kbm.tugas) : '',
+              kbm ? kbm.diinputOleh : '',
+              kbm ? kbm.waktuInput : ''
+            ]);
+          });
+        });
+      });
+
+      // Buat workbook
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      // Lebar kolom
+      ws['!cols'] = [
+        {wch:12},{wch:14},{wch:10},{wch:11},{wch:11},{wch:28},
+        {wch:11},{wch:30},{wch:14},{wch:40},{wch:14},{wch:20}
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Rekap KBM');
+
+      // Nama file
+      const tglMulai = formatTanggal(currentSenin);
+      const tglAkhir = (() => {
+        const d = new Date(currentSenin);
+        d.setDate(d.getDate() + 4);
+        return formatTanggal(d);
+      })();
+      const filename = `Rekap_KBM_${tglMulai}_${tglAkhir}.xlsx`;
+
+      XLSX.writeFile(wb, filename);
+
+    } catch (e) {
+      alert('Gagal mengunduh data. Coba lagi.');
+    } finally {
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Excel';
+      btn.disabled = false;
+    }
+  }
 
   // Init
   loadKelas();
